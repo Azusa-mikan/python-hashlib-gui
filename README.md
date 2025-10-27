@@ -93,3 +93,5 @@ The built-in system tools are painfully slow at calculating hashes—fine for sm
 I might be old and gray before it finishes, so I wrote this tool hoping it helps everyone.
 
 Plus, there’s no visual progress bar, leaving you clueless about where things stand.
+
+Moreover, I had to look for other tools to compare hash values, so I integrated that functionality into this program.
