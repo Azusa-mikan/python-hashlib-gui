@@ -17,7 +17,7 @@ Supports multiple hash algorithms including MD5, SHA1, SHA256, SHA512. When calc
 
 ## Performance Comparison
 
-![Performance Comparison Demo](src/performance.gif)
+![Performance Comparison Demo](res/performance.gif)
 
 The larger the file, the more pronounced the difference becomes.
 
@@ -78,9 +78,44 @@ This optimization can improve calculation efficiency for large files, especially
 - `hash_diff()`: Hash value comparison
 - `main()`: Main program logic
 
+## Usage Examples When Used as a Module
+
+```python
+from hash_calculation import calculate_hash_with_progress
+
+# Calculate hash value for a file
+file_path = "path/to/your/file"
+algorithm = "SHA256"
+hash_value = calculate_hash_with_progress(file_path, algorithm)
+print(f"{file_path}'s {algorithm} value is: {hash_value}")
+```
+
+```python
+from hash_calculation import hash_diff
+
+file_path = "path/to/your/file"
+algorithm = "SHA256"
+hash_value = calculate_hash_with_progress(file_path, algorithm)
+# Verify hash value for a file
+compare_hash = "your_sha256_hash"
+if hash_diff(hash_value, compare_hash):
+    print(f"{file_path}'s {algorithm} value verification successful ✅")
+else:
+    print(f"{file_path}'s {algorithm} value verification failed ❌")
+```
+
+```python
+from hash_calculation import get_ssd_or_hdd
+
+# Get disk types for all system disks (Windows only)
+disk_types = get_ssd_or_hdd()
+for disk, type in disk_types.items():
+    print(f"Disk {disk}: {type}")
+```
+
 ## Notes
 
-- Program is mainly optimized for Windows systems
+- Project is mainly optimized for Windows systems
 - Non-Windows systems will use default chunk size
 - Appropriate permissions are required to access files and disk information
 - Supports all types of file formats

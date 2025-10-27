@@ -1,3 +1,4 @@
+import argparse
 import sys
 import tkinter as tk
 from tkinter import filedialog, simpledialog
@@ -14,6 +15,7 @@ def get_platform() -> bool:
         return True
 
 def get_ssd_or_hdd() -> dict:
+    """获取所有硬盘的类型（SSD或HDD，仅支持Windows）"""
     if not get_platform():
         return {}
     command = """
@@ -60,6 +62,12 @@ def select_algorithm() -> str:
             algorithm.set(choice)
             root.destroy()
 
+        # 窗口关闭事件
+        def on_close():
+            sys.exit(0)
+
+        root.protocol("WM_DELETE_WINDOW", on_close)
+
         tk.Label(root, text="Please select a hash algorithm:").pack(pady=10)
         btn_frame = tk.Frame(root)
         btn_frame.pack(pady=5)
@@ -99,8 +107,7 @@ def select_algorithm() -> str:
                     print("Invalid input. Please select a number between 1 and 4.")
                     continue
 
-
-def select_file(algorithm: str):
+def select_file(algorithm: str) -> str:
     """打开文件选择对话框，无桌面环境时回退到input"""
     try:
         root = tk.Tk()
@@ -114,7 +121,7 @@ def select_file(algorithm: str):
         # 无桌面环境，回退到命令行输入
         return input(f"Please input the file path to calculate {algorithm}: ") 
 
-def input_hash(algorithm: str):
+def input_hash(algorithm: str) -> str | None:
     """输入要比对的哈希值"""
     try:
         custom_hash = simpledialog.askstring(
@@ -126,7 +133,7 @@ def input_hash(algorithm: str):
         # 无桌面环境，回退到命令行输入
         return input(f"Please input the {algorithm} value to compare against, or leave blank to skip: ") 
 
-def get_file_name(file_path):
+def get_file_name(file_path: str) -> str:
     """获取文件名称"""
     name = os.path.basename(file_path)
     max_length = 20
@@ -134,7 +141,7 @@ def get_file_name(file_path):
         name = "..." + name[-max_length:]
     return name
 
-def _chunk_size(file_path):
+def get_chunk_size(file_path: str) -> int:
     """根据文件路径判断分块大小"""
     DEFAULT_CHUNK = 1024 * 1024  # 1MB
     SSD_CHUNK = 512 * 1024       # 512KB
@@ -163,13 +170,12 @@ def _chunk_size(file_path):
             print(f"Unknown disk type for file {file_name} Default chunk size set to 1MB.") 
             return DEFAULT_CHUNK  # 默认分块大小为1MB
 
-
-def calculate_hash_with_progress(file_path, algorithm):
-    """计算文件的哈希值并显示进度条"""
+def calculate_hash_with_progress(file_path: str, algorithm: str) -> str:
+    """计算文件的哈希值"""
     # 获取文件大小
     file_size = os.path.getsize(file_path)
     # 根据文件所在磁盘判断分块大小
-    chunk_size = _chunk_size(file_path)
+    chunk_size = get_chunk_size(file_path)
     
     match algorithm:
         case "MD5":
@@ -206,11 +212,40 @@ def hash_diff(hash1: str, hash2: str) -> bool:
         return True
     else:
         return False
+    
+def run_calculate(file_path: str, algorithm: str, compare_hash: str | None = None) -> str:
+    """运行计算哈希值"""
+    hash = calculate_hash_with_progress(file_path, algorithm)
+    if compare_hash != "" and compare_hash is not None:
+        if hash_diff(hash, compare_hash):
+            print(f"{get_file_name(file_path)}'s {algorithm} value verification successful ✅")
+        else:
+            print(f"{get_file_name(file_path)}'s {algorithm} value verification failed ❌") 
+    return hash
+
+def main_arg():
+    """主函数，处理命令行参数"""
+    parser = argparse.ArgumentParser(description="Calculate file hash")
+    parser.add_argument("-f", "--file", help="Path to the file to calculate hash for.")
+    parser.add_argument("-m", "--mode", choices=["MD5", "SHA1", "SHA256", "SHA512"], help="Hash algorithm to use.")
+    parser.add_argument("-c", "--compare", dest="compare_hash", help="Optional hash value to compare against the calculated one.", nargs='?')
+    args = parser.parse_args()
+
+    file_path = os.path.abspath(args.file)
+    algorithm = args.mode
+    compare_hash = args.compare_hash
+    return file_path, algorithm, compare_hash
 
 def main():
+    if len(sys.argv) > 1:
+        file_path, algorithm, compare_hash = main_arg()
+        hash = run_calculate(file_path, algorithm, compare_hash)
+        print(f"{algorithm} value for {get_file_name(file_path)}: {hash}")
+        sys.exit(0)
     try:
         algorithm = select_algorithm()
         file_path_original = select_file(algorithm)
+        compare_hash = input_hash(algorithm)
         if not get_platform():
             file_path = os.path.realpath(file_path_original)
         else:
@@ -218,19 +253,11 @@ def main():
         if file_path == "":
             print("No file selected.") 
             sys.exit(0)
-        custom_hash = input_hash(algorithm)
-        hash = calculate_hash_with_progress(file_path, algorithm)
-        print(f"{algorithm} value for {get_file_name(file_path)}: {hash}") 
-        if custom_hash is None or custom_hash.strip() == "":
-            pass
-        elif hash_diff(custom_hash, hash):
-            print(f"{get_file_name(file_path)} {algorithm} value matches the input.") 
-        else:
-            print(f"{get_file_name(file_path)} {algorithm} value differs from the input.") 
-        input("Press any key to continue...") 
+        print(f"{algorithm} value for {get_file_name(file_path)}: {run_calculate(file_path, algorithm, compare_hash)}") 
+        input("Press any key to continue...")
         sys.exit(0)
     except KeyboardInterrupt:
-        print("\nProgram exited.") 
+        print("\nProgram exited.")
         sys.exit(0)
 
 if __name__ == "__main__":

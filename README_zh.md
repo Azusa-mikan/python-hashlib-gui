@@ -15,7 +15,7 @@
 
 ## 性能比较
 
-![性能比较演示](src/performance.gif)
+![性能比较演示](res/performance.gif)
 
 文件越大，差距越明显
 
@@ -76,9 +76,44 @@ pip install -r requirements.txt
 - `hash_diff()`: 哈希值比对
 - `main()`: 主程序逻辑
 
+## 作为模块时，使用示例
+
+```python
+from hash_calculation import calculate_hash_with_progress
+
+# 计算文件的 SHA256 哈希值
+file_path = "path/to/your/file"
+algorithm = "SHA256"
+hash_value = calculate_hash_with_progress(file_path, algorithm)
+print(f"{file_path}'s {algorithm} value is: {hash_value}")
+```
+
+```python
+from hash_calculation import hash_diff
+
+file_path = "path/to/your/file"
+algorithm = "SHA256"
+hash_value = calculate_hash_with_progress(file_path, algorithm)
+# 校验文件的 SHA256 哈希值
+compare_hash = "your_sha256_hash"
+if hash_diff(hash_value, compare_hash):
+    print(f"{file_path}'s {algorithm} value verification successful ✅")
+else:
+    print(f"{file_path}'s {algorithm} value verification failed ❌")
+```
+
+```python
+from hash_calculation import get_ssd_or_hdd
+
+# 获取系统所有硬盘的类型（仅 Windows）
+disk_types = get_ssd_or_hdd()
+for disk, type in disk_types.items():
+    print(f"Disk {disk}: {type}")
+```
+
 ## 注意事项
 
-- 程序主要针对 Windows 系统优化
+- 项目主要针对 Windows 系统优化
 - 非 Windows 系统会使用默认分块大小
 - 需要适当的权限来访问文件和磁盘信息
 - 支持所有类型的文件格式
