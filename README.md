@@ -85,3 +85,9 @@ This optimization can improve calculation efficiency for large files, especially
 - Appropriate permissions are required to access files and disk information
 - Supports all types of file formats
 - When running in virtual machines, accurate hard disk type may not be obtained
+
+## Project Origin
+
+The built-in system tools are painfully slow at calculating hashes—fine for small files, but what about a 100 GB one?
+I might be old and gray before it finishes, so I wrote this tool hoping it helps everyone.
+Plus, there’s no visual progress bar, leaving you clueless about where things stand.
