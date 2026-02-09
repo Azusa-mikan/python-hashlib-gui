@@ -10,4 +10,4 @@ dependencies = [
 ]
 
 [project.scripts]
-hashcalc = "hash_calculation.main:main"
+hashcalc = "hash_calculation.__main__:main"
