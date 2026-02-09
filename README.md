@@ -1,132 +1,97 @@
 # File Hash Verification Tool
 
-A Python-based multi-algorithm file hash calculation tool with GUI and intelligent chunking optimization.
-Supports multiple hash algorithms including MD5, SHA1, SHA256, SHA512. When calculating large files, the efficiency far exceeds system-built tools.
+A Python-based file hashing tool with GUI and TUI modes, intelligent chunking, and progress display.  
+Supports MD5, SHA1, SHA256, SHA512 for large files with noticeable speed improvements.
 
 [中文文档](./README_zh.md)
 
 ## Features
 
-- **Multi-algorithm Support**: Supports MD5, SHA1, SHA256, SHA512 and other hash algorithms
-- **GUI Support**: Uses Tkinter to provide file selection dialog and hash value input dialog
-- **Command Line Fallback**: Automatically falls back to command line input in non-GUI environments
-- **Intelligent Chunking Optimization**: Automatically adjusts read chunk size based on disk type (SSD/HDD)
-- **Real-time Progress Display**: Uses `alive-progress` library to show calculation progress bar
-- **Hash Value Verification**: Supports input of custom hash values for file verification and comparison
-- **Cross-platform Compatibility**: Supports Windows systems, non-Windows systems use default chunk size
+- GUI mode with Tkinter dialogs
+- TUI mode with questionary prompts
+- CLI arguments for direct calculation
+- Intelligent chunk size based on SSD/HDD (Windows only)
+- Real-time progress bar with alive-progress
+- Optional hash verification
 
 ## Performance Comparison
 
-![Performance Comparison Demo](res/performance.gif)
+![Performance Comparison](res/performance.gif)
 
 The larger the file, the more pronounced the difference becomes.
-
-## Installation Dependencies
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
 Main dependencies:
-- `tkinter` - GUI support
-- `alive-progress` - Progress bar display
-- `hashlib` - Hash algorithm calculation
+- `tkinter` - GUI dialogs
+- `questionary` - TUI prompts
+- `alive-progress` - Progress bar
 
-## Usage
+## Quick Start
 
-1. Run the program:
-   ```bash
-   python main.py
-   # On Windows, you can double-click to open directly
-   ```
+GUI mode (default):
+```bash
+python -m hash_calculation
+```
 
-2. Select hash algorithm
-   - Choose MD5, SHA1, SHA256 or SHA512 algorithm in GUI
-   - Select algorithm by number in non-GUI environments
+TUI mode:
+```bash
+python -m hash_calculation -t
+```
 
-3. Select the file to calculate hash value
-   - Select file through file selection dialog in GUI
-   - Input file path through command line in non-GUI environments
+CLI mode:
+```bash
+python -m hash_calculation -f "C:\path\to\file.iso" -m SHA256
+python -m hash_calculation -f "C:\path\to\file.iso" -m SHA256 -c "your_sha256_hash"
+```
 
-4. Input hash value to compare (optional)
-   - Input corresponding hash value in dialog for verification
-   - Leave blank to only display calculated hash value
+## Command Line Arguments
 
-5. View results
-   - Program will display calculation progress bar
-   - Output file's hash value
-   - If verification value was input, comparison result will be shown
+- `-t, --tui` Use TUI mode (interactive prompts)
+- `-f, --file` File path for CLI mode
+- `-m, --mode` Hash algorithm: MD5, SHA1, SHA256, SHA512
+- `-c, --compare` Optional hash value to verify
 
-## Intelligent Chunking Optimization
+## Intelligent Chunking
 
-The program automatically optimizes read chunk size based on the disk type where the file is located:
+On Windows, the program detects disk type to adjust chunk size:
+- SSD: 512KB
+- HDD: 256KB
+- Fallback: 1MB when disk type is unknown
 
-- **SSD**: 512KB chunk size
-- **HDD**: 256KB chunk size  
-- **Default**: 1MB chunk size (when disk type cannot be detected)
+Non-Windows systems always use the default chunk size.
 
-This optimization can improve calculation efficiency for large files, especially on different storage media.
-
-## Program Structure
-
-- `get_ssd_or_hdd()`: Detects system disk type (Windows only)
-- `select_algorithm()`: Selects hash algorithm
-- `select_file()`: File selection functionality
-- `input_hash()`: Hash value input functionality
-- `_chunk_size()`: Intelligent chunk size determination
-- `calculate_hash_with_progress()`: Hash calculation with progress bar
-- `hash_diff()`: Hash value comparison
-- `main()`: Main program logic
-
-## Usage Examples When Used as a Module
+## Use as a Module
 
 ```python
-from hash_calculation import calculate_hash_with_progress
+from hash_calculation import calculate_hash_with_progress, hash_diff
+from pathlib import Path
 
-# Calculate hash value for a file
-file_path = "path/to/your/file"
+file_path = Path("path/to/your/file")
 algorithm = "SHA256"
 hash_value = calculate_hash_with_progress(file_path, algorithm)
 print(f"{file_path}'s {algorithm} value is: {hash_value}")
-```
 
-```python
-from hash_calculation import hash_diff
-
-file_path = "path/to/your/file"
-algorithm = "SHA256"
-hash_value = calculate_hash_with_progress(file_path, algorithm)
-# Verify hash value for a file
 compare_hash = "your_sha256_hash"
 if hash_diff(hash_value, compare_hash):
-    print(f"{file_path}'s {algorithm} value verification successful ✅")
+    print("verification successful ✅")
 else:
-    print(f"{file_path}'s {algorithm} value verification failed ❌")
+    print("verification failed ❌")
 ```
 
 ```python
 from hash_calculation import get_ssd_or_hdd
 
-# Get disk types for all system disks (Windows only)
 disk_types = get_ssd_or_hdd()
-for disk, type in disk_types.items():
-    print(f"Disk {disk}: {type}")
+for disk, media_type in disk_types.items():
+    print(f"Disk {disk}: {media_type}")
 ```
 
 ## Notes
 
-- Project is mainly optimized for Windows systems
-- Non-Windows systems will use default chunk size
-- Appropriate permissions are required to access files and disk information
-- Supports all types of file formats
-- When running in virtual machines, accurate hard disk type may not be obtained
-
-## Project Origin
-
-The built-in system tools are painfully slow at calculating hashes—fine for small files, but what about a 100 GB one?
-
-I might be old and gray before it finishes, so I wrote this tool hoping it helps everyone.
-
-Plus, there’s no visual progress bar, leaving you clueless about where things stand.
-
-Moreover, I had to look for other tools to compare hash values, so I integrated that functionality into this program.
+- Disk type detection only works on Windows
+- Some environments may not return accurate disk media type
+- Large directories are not supported as input; select files only

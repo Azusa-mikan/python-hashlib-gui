@@ -1,24 +1,22 @@
 # 文件哈希校验工具
 
-一个基于 Python 的多算法文件哈希值计算工具，具有图形界面和智能分块优化功能。
-支持 MD5、SHA1、SHA256、SHA512 等多种哈希算法，计算大文件时效率远超系统自带工具。
+一个基于 Python 的文件哈希工具，支持 GUI/TUI 交互、智能分块和进度显示。  
+支持 MD5、SHA1、SHA256、SHA512，适合大文件快速计算与校验。
 
 ## 功能特性
 
-- **多算法支持**: 支持 MD5、SHA1、SHA256、SHA512 等多种哈希算法
-- **图形界面支持**: 使用 Tkinter 提供文件选择对话框和哈希值输入对话框
-- **命令行回退**: 在没有图形界面的环境中自动回退到命令行输入
-- **智能分块优化**: 根据文件所在磁盘类型（SSD/HDD）自动调整读取分块大小
-- **实时进度显示**: 使用 `alive-progress` 库显示计算进度条
-- **哈希值校验**: 支持输入自定义哈希值进行文件校验比对
-- **跨平台兼容**: 支持 Windows 系统，非 Windows 系统使用默认分块大小
+- GUI 模式（Tkinter）
+- TUI 模式（questionary）
+- CLI 参数模式（直接计算）
+- 根据磁盘类型自动调整分块大小（仅 Windows）
+- alive-progress 实时进度条
+- 可选哈希值比对
 
 ## 性能比较
 
-![性能比较演示](res/performance.gif)
+![性能比较](res/performance.gif)
 
 文件越大，差距越明显
-
 ## 安装依赖
 
 ```bash
@@ -26,105 +24,72 @@ pip install -r requirements.txt
 ```
 
 主要依赖包：
-- `tkinter` - 图形界面支持
-- `alive-progress` - 进度条显示
-- `hashlib` - 哈希算法计算
+- `tkinter` - 图形界面
+- `questionary` - 终端交互
+- `alive-progress` - 进度条
 
-## 使用方法
+## 快速开始
 
-1. 运行程序：
-   ```bash
-   python main.py
-   # 在 Windows 系统中，可以直接双击打开
-   ```
+GUI 模式（默认）：
+```bash
+python -m hash_calculation
+```
 
-2. 选择哈希算法
-   - 在图形界面中选择 MD5、SHA1、SHA256 或 SHA512 算法
-   - 在无图形界面环境中通过数字选择算法
+TUI 模式：
+```bash
+python -m hash_calculation -t
+```
 
-3. 选择要计算哈希值的文件
-   - 在图形界面中通过文件选择对话框选择文件
-   - 在无图形界面环境中通过命令行输入文件路径
+CLI 模式：
+```bash
+python -m hash_calculation -f "C:\path\to\file.iso" -m SHA256
+python -m hash_calculation -f "C:\path\to\file.iso" -m SHA256 -c "your_sha256_hash"
+```
 
-4. 输入要比较的哈希值（可选）
-   - 在对话框中输入对应算法的哈希值进行校验
-   - 留空则只显示计算出的哈希值
+## 命令行参数
 
-5. 查看结果
-   - 程序会显示计算进度条
-   - 输出文件的哈希值
-   - 如果输入了校验值，会显示比对结果
+- `-t, --tui` 使用 TUI 模式
+- `-f, --file` CLI 模式下的文件路径
+- `-m, --mode` 哈希算法：MD5、SHA1、SHA256、SHA512
+- `-c, --compare` 可选哈希值，用于校验
 
 ## 智能分块优化
 
-程序会根据文件所在磁盘类型自动优化读取分块大小：
+Windows 下会检测磁盘类型并调整分块大小：
+- SSD: 512KB
+- HDD: 256KB
+- 兜底: 1MB（无法识别时）
 
-- **SSD**: 512KB 分块大小
-- **HDD**: 256KB 分块大小  
-- **默认**: 1MB 分块大小（无法检测磁盘类型时）
+非 Windows 系统使用默认分块大小。
 
-这种优化可以提高大文件的计算效率，特别是在不同存储介质上。
-
-## 程序结构
-
-- `get_ssd_or_hdd()`: 检测系统磁盘类型（仅 Windows）
-- `select_algorithm()`: 选择哈希算法
-- `select_file()`: 文件选择功能
-- `input_hash()`: 哈希值输入功能
-- `_chunk_size()`: 智能分块大小判断
-- `calculate_hash_with_progress()`: 带进度条的哈希计算
-- `hash_diff()`: 哈希值比对
-- `main()`: 主程序逻辑
-
-## 作为模块时，使用示例
+## 作为模块使用
 
 ```python
-from hash_calculation import calculate_hash_with_progress
+from hash_calculation import calculate_hash_with_progress, hash_diff
+from pathlib import Path
 
-# 计算文件的 SHA256 哈希值
-file_path = "path/to/your/file"
+file_path = Path("path/to/your/file")
 algorithm = "SHA256"
 hash_value = calculate_hash_with_progress(file_path, algorithm)
 print(f"{file_path}'s {algorithm} value is: {hash_value}")
-```
 
-```python
-from hash_calculation import hash_diff
-
-file_path = "path/to/your/file"
-algorithm = "SHA256"
-hash_value = calculate_hash_with_progress(file_path, algorithm)
-# 校验文件的 SHA256 哈希值
 compare_hash = "your_sha256_hash"
 if hash_diff(hash_value, compare_hash):
-    print(f"{file_path}'s {algorithm} value verification successful ✅")
+    print("校验成功 ✅")
 else:
-    print(f"{file_path}'s {algorithm} value verification failed ❌")
+    print("校验失败 ❌")
 ```
 
 ```python
 from hash_calculation import get_ssd_or_hdd
 
-# 获取系统所有硬盘的类型（仅 Windows）
 disk_types = get_ssd_or_hdd()
-for disk, type in disk_types.items():
-    print(f"Disk {disk}: {type}")
+for disk, media_type in disk_types.items():
+    print(f"Disk {disk}: {media_type}")
 ```
 
 ## 注意事项
 
-- 项目主要针对 Windows 系统优化
-- 非 Windows 系统会使用默认分块大小
-- 需要适当的权限来访问文件和磁盘信息
-- 支持所有类型的文件格式
-- 在虚拟机运行时，可能不会获得准确的硬盘类型
-
-## 项目初衷
-
-系统自带的工具计算哈希真的慢的要死，小文件还好，如果文件有100G呢？
-
-可能我老了都不一定能算出来，所以我写了这个工具，希望能帮助到大家
-
-而且也没有可视化的进度条，都不知道进行到哪一步了
-
-而且，哈希值的比对我还要找其它工具，比较麻烦，所以我也集成到这个程序里了
+- 磁盘类型检测仅支持 Windows
+- 在虚拟机环境可能无法准确识别硬盘类型
+- 仅支持文件输入，不支持目录
