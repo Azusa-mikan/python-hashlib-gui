@@ -1,6 +1,6 @@
 [project]
 name = "hash-calculation"
-version = "0.0.2"
+version = "0.0.3-1"
 description = "Calculate file hashes super fast!"
 readme = "README.md"
 requires-python = ">=3.10"

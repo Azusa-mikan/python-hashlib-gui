@@ -1,14 +1,14 @@
 # 文件哈希校验工具
 
-一个基于 Python 的文件哈希工具，支持 GUI/TUI 交互、智能分块和进度显示。  
+一个基于 Python 的文件哈希工具，支持 GUI/TUI 交互、磁盘类型分块建议与进度显示。  
 支持 MD5、SHA1、SHA256、SHA512，适合大文件快速计算与校验。
 
 ## 功能特性
 
-- GUI 模式（Tkinter）
+- GUI 模式（Tkinter，不可用时自动降级到 TUI）
 - TUI 模式（questionary）
 - CLI 参数模式（直接计算）
-- 根据磁盘类型自动调整分块大小（仅 Windows）
+- 根据磁盘类型提供分块大小建议（仅 Windows）
 - alive-progress 实时进度条
 - 可选哈希值比对
 
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ```
 
 主要依赖包：
-- `tkinter` - 图形界面
+- `tkinter` - 图形界面（可用时为标准库）
 - `questionary` - 终端交互
 - `alive-progress` - 进度条
 
@@ -55,22 +55,26 @@ python -m hash_calculation -f "C:\path\to\file.iso" -m SHA256 -c "your_sha256_ha
 
 ## 智能分块优化
 
-Windows 下会检测磁盘类型并调整分块大小：
+Windows 下提供磁盘类型检测用于分块大小建议：
 - SSD: 512KB
 - HDD: 256KB
 - 兜底: 1MB（无法识别时）
 
-非 Windows 系统使用默认分块大小。
+非 Windows 系统默认使用 1MB，除非手动传入分块大小。
 
 ## 作为模块使用
 
 ```python
-from hash_calculation import calculate_hash_with_progress, hash_diff
+from hash_calculation import calculate_hash_with_progress, get_chunk_size, hash_diff
 from pathlib import Path
 
 file_path = Path("path/to/your/file")
 algorithm = "SHA256"
-hash_value = calculate_hash_with_progress(file_path, algorithm)
+chunk_size = get_chunk_size(file_path)
+hash_value = calculate_hash_with_progress(file_path, algorithm, chunk_size=chunk_size)
+# 或不带进度条的计算
+# from hash_calculation import calculate_hash
+# hash_value = calculate_hash(file_path, algorithm, chunk_size=chunk_size)
 print(f"{file_path}'s {algorithm} value is: {hash_value}")
 
 compare_hash = "your_sha256_hash"

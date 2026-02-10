@@ -11,10 +11,14 @@ Algorithm = Literal["MD5", "SHA1", "SHA256", "SHA512"]
 
 _disk_media_cache: dict | None = None
 
+DEFAULT_CHUNK = 1024 * 1024  # 1MB
+SSD_CHUNK = 512 * 1024       # 512KB
+HDD_CHUNK = 256 * 1024       # 256KB
+
 def get_platform() -> bool:
     return platform.system() == "Windows"
 
-def get_ssd_or_hdd() -> dict:
+def get_ssd_or_hdd() -> dict[str, str]:
     """获取所有硬盘的类型（SSD或HDD，仅支持Windows）"""
     global _disk_media_cache
     if _disk_media_cache is not None:
@@ -48,9 +52,6 @@ def get_ssd_or_hdd() -> dict:
 
 def get_chunk_size(file_path: Path) -> int:
     """根据文件路径判断分块大小"""
-    DEFAULT_CHUNK = 1024 * 1024  # 1MB
-    SSD_CHUNK = 512 * 1024       # 512KB
-    HDD_CHUNK = 256 * 1024       # 256KB
     ssd_or_hdd = get_ssd_or_hdd()
     if not ssd_or_hdd:
         if not get_platform():
@@ -82,13 +83,10 @@ def get_file_name(file_path: Path, max_length: int = 20) -> str:
         name = "..." + name[-max_length:]
     return name
 
-def calculate_hash_with_progress(file_path: Path, algorithm: Algorithm) -> str:
-    """计算文件的哈希值"""
+def calculate_hash_with_progress(file_path: Path, algorithm: Algorithm, chunk_size: int = DEFAULT_CHUNK) -> str:
+    """计算文件的哈希值(带进度条)"""
     # 获取文件大小
     file_size = file_path.stat().st_size
-    # 根据文件所在磁盘判断分块大小
-    chunk_size = get_chunk_size(file_path)
-    
     match algorithm:
         case "MD5":
             hasher = hashlib.md5()
@@ -102,9 +100,12 @@ def calculate_hash_with_progress(file_path: Path, algorithm: Algorithm) -> str:
             raise ValueError("You must select an algorithm: MD5, SHA1, SHA256, SHA512.")
     with alive_bar(
         file_size, title=f"Calculating {algorithm} for {get_file_name(file_path)}",
-        theme='classic',scale=True,
-        spinner=None,dual_line=True,
-        precision=2,max_cols=20
+        theme='classic',
+        scale=True,
+        spinner=None,
+        dual_line=True,
+        precision=2,
+        max_cols=20
         ) as bar:
         with open(file_path, 'rb') as f:
             # 分块读取文件
@@ -115,6 +116,29 @@ def calculate_hash_with_progress(file_path: Path, algorithm: Algorithm) -> str:
                 hasher.update(chunk)
                 bar(len(chunk))  # 更新进度条
     
+    return hasher.hexdigest().upper()
+
+def calculate_hash(file_path: Path, algorithm: Algorithm, chunk_size: int = DEFAULT_CHUNK) -> str:
+    """计算文件的哈希值"""
+    match algorithm:
+        case "MD5":
+            hasher = hashlib.md5()
+        case "SHA1":
+            hasher = hashlib.sha1()
+        case "SHA256":
+            hasher = hashlib.sha256()
+        case "SHA512":
+            hasher = hashlib.sha512()
+        case _:
+            raise ValueError("You must select an algorithm: MD5, SHA1, SHA256, SHA512.")
+    with open(file_path, 'rb') as f:
+        # 分块读取文件
+        while True:
+            chunk = f.read(chunk_size)
+            if not chunk:
+                break
+            hasher.update(chunk)
+
     return hasher.hexdigest().upper()
 
 def hash_diff(hash1: str, hash2: str) -> bool:
@@ -130,7 +154,8 @@ def run_calculate(
         compare_hash: str | None = None
     ) -> str:
     """运行计算哈希值"""
-    digest = calculate_hash_with_progress(file_path, algorithm)
+    chunk_size = get_chunk_size(file_path)
+    digest = calculate_hash_with_progress(file_path, algorithm, chunk_size=chunk_size)
     if compare_hash and compare_hash.strip():
         if hash_diff(digest, compare_hash):
             print(f"{get_file_name(file_path)}'s {algorithm} value verification successful ✅")
